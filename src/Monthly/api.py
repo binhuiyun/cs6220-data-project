@@ -1,13 +1,10 @@
 from re import T
 import requests
 import json
-import prettytable
-import constant
 import pandas as pd
 import config
 
 class ApiRequest():
-
     def __init__(self):
         self.data_type = {
             '01': 'All_Employees',
@@ -42,12 +39,7 @@ class ApiRequest():
         data = json.dumps({"seriesid": list(series_dict.keys()),
                             "startyear": dates[0], 
                             "endyear": dates[1]})
-        print(data)
-        # Post request for the data
-        # p = requests.post(
-        #     '{}{}'.format(url, key),
-        #     headers=headers,
-        #     data=data).json()['Results']['series']
+
         p = requests.post(
             '{}{}'.format(url, key),
             headers=headers,
@@ -55,6 +47,11 @@ class ApiRequest():
         json_data = json.loads(p.text)
         print('test', json_data)
 
+        # Post request for the data
+        # p = requests.post(
+        #     '{}{}'.format(url, key),
+        #     headers=headers,
+        #     data=data).json()['Results']['series']
         # # Empty dataframe to fill with values
         # df = pd.DataFrame()
 
@@ -69,3 +66,5 @@ class ApiRequest():
         #         ).astype(float).iloc[::-1]
         
         # print(df)
+        # file_name = '../../data/' + state_code + '_' + sector
+        #df.to_csv(file_name, sep='\t', encoding='utf-8')

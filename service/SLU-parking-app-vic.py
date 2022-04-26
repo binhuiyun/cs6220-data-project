@@ -6,6 +6,7 @@ from streamlit_folium import folium_static
 import folium
 from folium import plugins
 import math
+import numpy as np
 
 # Method to display date side bar and gather user data time input
 def user_input_date():
@@ -97,7 +98,15 @@ m = folium.Map(location=[47.6256, -122.3344], zoom_start=15)
 
 if user_confirm():
     predict_map(model_occupancy, day, minute, coordinates)
-    points = predict_map(model_occupancy, day, minute, coordinates)
+    paid_occupancy_pred = predict_map(model_occupancy, day, minute, coordinates)
+
+    paid_occupancy_percentage = []
+    for i in range(0, len(paid_occupancy_pred)):
+        percentage = paid_occupancy_pred[i][2] / coordinates['ParkingSpaceCount'][i]
+        paid_occupancy_percentage.append([paid_occupancy_pred[i][0], paid_occupancy_pred[i][1], percentage]) 
+
+    points = np.array(paid_occupancy_percentage)
+    print(paid_occupancy_percentage)
     plugins.HeatMap(points).add_to(m)
 
     num = predict_street(model_available, day, minute, lat, lon)

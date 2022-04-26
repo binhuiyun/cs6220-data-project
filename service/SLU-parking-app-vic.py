@@ -1,4 +1,3 @@
-from pickle import NONE
 import streamlit as st
 import joblib
 import datetime

@@ -13,7 +13,7 @@ def user_input_date():
         "Select a date",
         datetime.date(2022, 3, 22)
     )
-    hour = st.sidebar.slider('Hour', 8, 18, 0)
+    hour = st.sidebar.slider('Hour', 8, 18, 8)
     minute= st.sidebar.slider('Minute',0, 60, 0)
 
     day_of_the_week = date.weekday()
@@ -61,7 +61,7 @@ def generate_model_input_map(day, minute, coordinates):
     minute_list += num_coor * [minute]
     coordinates['DayOfTheWeek'] = day_list
     coordinates['MinuteOfTheDay'] = minute_list
-    coordinates = coordinates[['DayOfTheWeek','MinuteOfTheDay','Latitude', 'Longitude']]
+    coordinates = coordinates[['DayOfTheWeek','MinuteOfTheDay','Latitude', 'Longitude', 'ParkingSpaceCount']]
     return coordinates
 
 def predict_map(model, day, minute, coordinates):
@@ -84,7 +84,8 @@ def predict_street(model, day, minute, Latitude, Longitude):
 
 
 # Main Panel
-model = joblib.load('../parking/random-forest.joblib')
+model_available = joblib.load('../parking/random-forest-ParkingSpaceAvailable.joblib')
+model_occupancy = joblib.load('../parking/random-forest-PaidOccupancy.joblib')
 coordinates = pd.read_csv('../parking/data/paystub_coordinates.csv')
 paystubs = pd.read_csv('../parking/data/paystub_location.csv')
 
@@ -95,13 +96,13 @@ lat, lon = user_input_street(paystubs)
 m = folium.Map(location=[47.6256, -122.3344], zoom_start=15)
 
 if user_confirm():
-    predict_map(model, day, minute, coordinates)
-    points = predict_map(model, day, minute, coordinates)
+    predict_map(model_occupancy, day, minute, coordinates)
+    points = predict_map(model_occupancy, day, minute, coordinates)
     plugins.HeatMap(points).add_to(m)
 
-    num = predict_street(model, day, minute, lat, lon)
+    num = predict_street(model_available, day, minute, lat, lon)
     if num[0] > 0:
-        st.write(math.floor(num[0]), "parking space is available on your selected street!")
+        st.write(round(num[0]), "parking space is available on your selected street!")
     else:
         st.write('No available parking on your selected street!')
 

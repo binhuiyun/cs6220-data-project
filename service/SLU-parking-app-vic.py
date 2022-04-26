@@ -7,6 +7,7 @@ import folium
 from folium import plugins
 import math
 
+# Method to display date side bar and gather user data time input
 def user_input_date():
     date = st.sidebar.date_input(
         "Select a date",
@@ -20,12 +21,14 @@ def user_input_date():
 
     return (day_of_the_week, minute_of_the_day)
 
+# Method to display "See Result" and gather on click response
 def user_confirm():
     res = st.sidebar.button("See Result")
     return res
 
+# Method to display block and street side drop down menu and gather user street input
 def user_input_street(data):
-    blocks = data['BlockfaceName'].tolist()
+    blocks = data['BlockfaceName'].unique().tolist()
     blocks = sorted(blocks)
 
     location_selector = st.sidebar.selectbox(
@@ -50,6 +53,7 @@ def user_input_street(data):
 
     return lat, lon
 
+# Method to generate a data frame that contains 
 def generate_model_input_map(day, minute, coordinates):
     num_coor = len(coordinates)
     day_list, minute_list = [], []

@@ -1,3 +1,4 @@
+from pickle import NONE
 import streamlit as st
 import joblib
 import datetime
@@ -6,7 +7,6 @@ from streamlit_folium import folium_static
 import folium
 from folium import plugins
 
-# model = joblib.load('../parking/random-forest.joblib')
 
 def user_input_date():
     date = st.sidebar.date_input(
@@ -16,11 +16,14 @@ def user_input_date():
     hour = st.sidebar.slider('Hour', 8, 18, 0)
     minute= st.sidebar.slider('Minute',0, 60, 0)
 
-    day_of_the_week = date.weekday
+    day_of_the_week = date.weekday()
     minute_of_the_day = hour * 60 + minute
 
     return (day_of_the_week, minute_of_the_day)
 
+def user_confirm():
+    res = st.sidebar.button("See result")
+    return res
 
 def generate_model_input_map(day, minute, coordinates):
     num_coor = len(coordinates)
@@ -29,7 +32,17 @@ def generate_model_input_map(day, minute, coordinates):
     minute_list += num_coor * [minute]
     coordinates['DayOfTheWeek'] = day_list
     coordinates['MinuteOfTheDay'] = minute_list
+    coordinates = coordinates[['DayOfTheWeek','MinuteOfTheDay','Latitude', 'Longitude']]
     return coordinates
+
+def predict_map(model, day, minute, coordinates):
+    map_df = generate_model_input_map(day, minute, coordinates)
+    map_out = model.predict(map_df)
+
+    new_df = map_df[['Longitude','Latitude']]
+    new_df = pd.concat([new_df, pd.DataFrame(map_out, columns=['count'])], axis = 1)
+    points = new_df.to_numpy()
+    return points
 
 def generate_model_input_point(day, minute, Latitude, Longitude):
     col = ['DayOfTheWeek', 'MinuteOfTheDay', 'Latitude', 'Longitude']
@@ -44,14 +57,16 @@ def map(array):
         plugins.HeatMap(array).add_to(m)
     folium_static(m)
 
+
 # Main Panel
-# coordinates = pd.read_csv('../parking/data/paystub_coordinates.csv')
-user_input_date()
-map([])
+model = joblib.load('../parking/random-forest.joblib')
+coordinates = pd.read_csv('../parking/data/paystub_coordinates.csv')
+day, minute = user_input_date()
 
-# def main():
-#     coordinates = pd.read_csv('../parking/data/paystub_coordinates.csv')
-#     test = generate_model_input_map(10, 100, coordinates)
-#     print(test)
+m = folium.Map(location=[47.6256, -122.3344], zoom_start=15)
+if user_confirm():
+    predict_map(model, day, minute, coordinates)
 
-# main()
+    points = predict_map(model, day, minute, coordinates)
+    plugins.HeatMap(points).add_to(m)
+folium_static(m)

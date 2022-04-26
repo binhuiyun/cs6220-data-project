@@ -33,9 +33,17 @@ def user_input_street(data):
         blocks
     )
 
-    lat = data[(data['BlockfaceName'] == location_selector)]['Latitude']
+    df_street = data[data['BlockfaceName'] == location_selector]
+    sides = df_street['SideOfStreet'].tolist()
+    sides = sorted(sides)
 
-    lon = data[ (data['BlockfaceName'] == location_selector)]['Longitude']
+    side_selector = st.sidebar.selectbox(
+        "Select a street side",
+        sides
+    )
+
+    lat = data[(data['BlockfaceName'] == location_selector) & (data['SideOfStreet'] == side_selector)]['Latitude']
+    lon = data[ (data['BlockfaceName'] == location_selector) & (data['SideOfStreet'] == side_selector)]['Longitude']
     
     lat = lat.values[0]
     lon = lon.values[0]

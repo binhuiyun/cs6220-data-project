@@ -12,9 +12,8 @@ from sklearn.neighbors import KNeighborsRegressor
 
 from interpret import save_data, read_data_by_filename
 
-
 SOURCE_FILENAME = 'Paid_Parking_Occupancy__Last_30_Days_.csv'
-TARGET_AREA = 'Denny Triangle'
+TARGET_AREA = 'South Lake Union'
 
 
 def evaluate_accuracy(model, x_train, y_train, x_test, y_test):
@@ -30,7 +29,7 @@ def gradient_boosting_regression(x_train, x_test, y_train, y_test):
     model.fit(x_train, y_train)
 
     r_square_score = evaluate_accuracy(model, x_train, y_train, x_test, y_test)
-    dump(model, str(r_square_score) + '_gradient_boosting.joblib')
+    dump(model, str(r_square_score) + '_out_' + TARGET_AREA.replace(' ', '_') + '_gradient_boosting.joblib')
 
 
 def random_forest_regression(x_train, x_test, y_train, y_test):
@@ -38,7 +37,7 @@ def random_forest_regression(x_train, x_test, y_train, y_test):
     model.fit(x_train, y_train)
 
     r_square_score = evaluate_accuracy(model, x_train, y_train, x_test, y_test)
-    dump(model, str(r_square_score) + '_random_forest.joblib')
+    dump(model, str(r_square_score) + '_out_' + TARGET_AREA.replace(' ', '_') + '_random_forest.joblib')
 
 
 def k_neighbors_regression(x_train, x_test, y_train, y_test):
@@ -46,7 +45,7 @@ def k_neighbors_regression(x_train, x_test, y_train, y_test):
     model.fit(x_train, y_train)
 
     r_square_score = evaluate_accuracy(model, x_train, y_train, x_test, y_test)
-    dump(model, str(r_square_score) + '_k_neighbors.joblib')
+    dump(model, str(r_square_score) + '_out_' + TARGET_AREA.replace(' ', '_') + '_k_neighbors.joblib')
 
 
 def linear_regression(x_train, x_test, y_train, y_test):
@@ -54,7 +53,7 @@ def linear_regression(x_train, x_test, y_train, y_test):
     model.fit(x_train, y_train)
 
     r_square_score = evaluate_accuracy(model, x_train, y_train, x_test, y_test)
-    dump(model, str(r_square_score) + '_linear.joblib')
+    dump(model, str(r_square_score) + '_out_' + TARGET_AREA.replace(' ', '_') + '_linear.joblib')
 
 
 def expand_data(dataframe):
@@ -114,12 +113,14 @@ def train_models(dataframe):
 def main():
     start_time = time()
 
+    # perform source dataset pre-processing and generate enhanced dataset (can be skipped)
     raw_df = read_data_by_filename(SOURCE_FILENAME)
     filtered_df = raw_df[raw_df['PaidParkingArea'] == TARGET_AREA]
     expanded_df = expand_data(filtered_df)
-    save_data(expanded_df, TARGET_AREA + '_' + SOURCE_FILENAME)
+    save_data(expanded_df, 'out_' + TARGET_AREA.replace(' ', '_') + '_' + SOURCE_FILENAME)
 
-    clean_df = read_data_by_filename(TARGET_AREA + '_' + SOURCE_FILENAME)
+    # execute model training
+    clean_df = read_data_by_filename('out_' + TARGET_AREA.replace(' ', '_') + '_' + SOURCE_FILENAME)
     train_models(clean_df)
 
     print("--- %s seconds ---" % (time() - start_time))

@@ -7,7 +7,7 @@ def read_data_by_filename(input_filename):
 
     file_path = path.join(directory_path, '..', 'data', input_filename)
 
-    return read_csv(file_path, verbose=True)
+    return read_csv(file_path, verbose=False)
 
 
 def service_read_data(input_filename):

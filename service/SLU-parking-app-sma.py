@@ -1,17 +1,27 @@
+from os import path
+
 import numpy as np
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
 from joblib import load
-
-from parking.interpret import service_read_data
+from pandas import read_csv
 
 st.set_page_config(layout='wide')
 
 
 @st.experimental_singleton
-def load_data(filename):
-    return service_read_data(filename)
+def load_model_file(input_filename):
+    file_path = path.join(path.abspath(path.dirname(__file__)), '..', 'joblibs', input_filename)
+    print(file_path)
+    return load(file_path)
+
+
+@st.experimental_singleton
+def load_data_file(input_filename):
+    file_path = path.join(path.abspath(path.dirname(__file__)), '..', 'data', input_filename)
+    print(file_path)
+    return read_csv(file_path)
 
 
 @st.experimental_singleton
@@ -32,7 +42,7 @@ def render_map(data, lat, lon, zoom):
             initial_view_state={'latitude': lat, 'longitude': lon, 'zoom': zoom, 'pitch': 50},
             layers=[
                 pdk.Layer('HexagonLayer', data=data, get_position=['Longitude', 'Latitude'], radius=18,
-                          elevation_scale=4, elevation_range=[0, 50], pickable=True, extruded=True)
+                          elevation_scale=4, elevation_range=[0, 100], pickable=True, extruded=True)
             ]
         )
     )
@@ -66,17 +76,23 @@ def predict(model, cols, day, hour, minute):
 
 
 # data model initialization
-input_model_list = [load('../joblibs/slu_random_forest.joblib'),
-                    load('../joblibs/fh_random_forest.joblib')]
+input_model_list = [load_model_file('../joblibs/out_South_Lake_Union_random_forest.joblib'),
+                    load_model_file('../joblibs/out_Capitol_Hill_random_forest.joblib'),
+                    load_model_file('../joblibs/out_Denny_Triangle_random_forest.joblib'),
+                    load_model_file('../joblibs/out_First_Hill_random_forest.joblib')]
 
-df_list = [load_data('processed-slu-Paid_Parking_Occupancy__Last_30_Days_.csv'),
-           load_data('processed-fh-Paid_Parking_Occupancy__Last_30_Days_.csv')]
+df_list = [load_data_file('out_South_Lake_Union_Paid_Parking_Occupancy__Last_30_Days_.csv'),
+           load_data_file('out_Capitol_Hill_Paid_Parking_Occupancy__Last_30_Days_.csv'),
+           load_data_file('out_Denny_Triangle_Paid_Parking_Occupancy__Last_30_Days_.csv'),
+           load_data_file('out_First_Hill_Paid_Parking_Occupancy__Last_30_Days_.csv')]
 
-cols_list = [extract_columns(df_list[0]), extract_columns(df_list[1])]
+cols_list = [extract_columns(df_list[0]), extract_columns(df_list[1]),
+             extract_columns(df_list[2]), extract_columns(df_list[3])]
 
 row_0_0, row_0_1 = st.columns((1, 1))
 row_1_0, row_1_1 = st.columns((3, 2))
 row_2_0, row_2_1 = st.columns((1, 1))
+row_3_0, row_3_1 = st.columns((1, 1))
 
 with row_0_0:
     st.title('Seattle City Paid Parking Prediction')
@@ -100,14 +116,22 @@ with row_1_1:
     input_hour = st.slider('Select hour', 8, 18, value=10)
     input_minute = st.slider('Select minute', 0, 59, value=30)
 
-with row_2_0:
-    midpoint = calculate_mid_point(df_list[0]['Latitude'], df_list[0]['Longitude'])
-    predicted_df = predict(input_model_list[0], cols_list[0], input_day, input_hour, input_minute)
-    print('Predicted with attributes => day: {0}, hour: {1}, minute: {2}'.format(input_day, input_hour, input_minute))
+
+def render_map_handler(index):
+    midpoint = calculate_mid_point(df_list[index]['Latitude'], df_list[index]['Longitude'])
+    predicted_df = predict(input_model_list[index], cols_list[index], input_day, input_hour, input_minute)
+    print('Predicted with attributes => day: {0}, hour: {1}, minute: {2}\n'.format(input_day, input_hour, input_minute))
     render_map(predicted_df, midpoint[0], midpoint[1], 14)
 
+
+with row_2_0:
+    render_map_handler(0)
+
 with row_2_1:
-    midpoint = calculate_mid_point(df_list[1]['Latitude'], df_list[1]['Longitude'])
-    predicted_df = predict(input_model_list[1], cols_list[1], input_day, input_hour, input_minute)
-    print('Predicted with attributes => day: {0}, hour: {1}, minute: {2}'.format(input_day, input_hour, input_minute))
-    render_map(predicted_df, midpoint[0], midpoint[1], 14)
+    render_map_handler(1)
+
+with row_3_0:
+    render_map_handler(2)
+
+with row_3_1:
+    render_map_handler(3)

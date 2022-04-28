@@ -76,15 +76,15 @@ def predict(model, cols, day, hour, minute):
 
 
 # data model initialization
-input_model_list = [load_model_file('../joblibs/out_South_Lake_Union_random_forest.joblib'),
-                    load_model_file('../joblibs/out_Capitol_Hill_random_forest.joblib'),
-                    load_model_file('../joblibs/out_Denny_Triangle_random_forest.joblib'),
-                    load_model_file('../joblibs/out_First_Hill_random_forest.joblib')]
+input_model_list = [load_model_file('../joblibs/out_South_Lake_Union_random_forest.joblib.gz'),
+                    load_model_file('../joblibs/out_Capitol_Hill_random_forest.joblib.gz'),
+                    load_model_file('../joblibs/out_Denny_Triangle_random_forest.joblib.gz'),
+                    load_model_file('../joblibs/out_First_Hill_random_forest.joblib.gz')]
 
-df_list = [load_data_file('out_South_Lake_Union_Paid_Parking_Occupancy__Last_30_Days_.csv'),
-           load_data_file('out_Capitol_Hill_Paid_Parking_Occupancy__Last_30_Days_.csv'),
-           load_data_file('out_Denny_Triangle_Paid_Parking_Occupancy__Last_30_Days_.csv'),
-           load_data_file('out_First_Hill_Paid_Parking_Occupancy__Last_30_Days_.csv')]
+df_list = [load_data_file('out_South_Lake_Union_Paid_Parking_Occupancy__Last_30_Days_.csv.gz'),
+           load_data_file('out_Capitol_Hill_Paid_Parking_Occupancy__Last_30_Days_.csv.gz'),
+           load_data_file('out_Denny_Triangle_Paid_Parking_Occupancy__Last_30_Days_.csv.gz'),
+           load_data_file('out_First_Hill_Paid_Parking_Occupancy__Last_30_Days_.csv.gz')]
 
 cols_list = [extract_columns(df_list[0]), extract_columns(df_list[1]),
              extract_columns(df_list[2]), extract_columns(df_list[3])]

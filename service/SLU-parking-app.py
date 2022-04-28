@@ -11,7 +11,7 @@ clf = joblib.load('./random-forest.joblib')
 st.set_page_config(layout='wide')
 st.markdown(
     
-       """
+    """
     <style>
     [data-testid="stSidebar"][aria-expanded="true"] > div:first-child {
         width: 465px;
@@ -88,7 +88,7 @@ if user_confirm():
     prediction = clf.predict(df)
     st.header('Prediction of Paid Occupancy')
     occupied_spots =round(prediction[0])
-    st.write("""**occupied_spots**""")
+    st.write(occupied_spots)
 
     st.write('---')
     available_spots = df['ParkingSpaceCount'][0] - occupied_spots

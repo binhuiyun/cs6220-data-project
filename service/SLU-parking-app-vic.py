@@ -29,30 +29,40 @@ def user_confirm():
 
 # Method to display block and street side drop down menu and gather user street input
 def user_input_street(data):
-    blocks = data['BlockfaceName'].unique().tolist()
+    
+    areas = ['South Lake Union', 'Denny Triangle', 'First Hill', 'Capitol Hill']
+
+    area_selector = st.sidebar.selectbox(
+        "Select an area",
+        areas
+    )
+
+    df_area = data.loc[data['PaidParkingArea'] == area_selector]
+    blocks = df_area['BlockfaceName'].unique().tolist()
     blocks = sorted(blocks)
 
     location_selector = st.sidebar.selectbox(
-        "Select a location",
+        "Select a street name",
         blocks
     )
 
-    df_street = data[data['BlockfaceName'] == location_selector]
+    df_street = df_area.loc[df_area['BlockfaceName'] == location_selector]
     sides = df_street['SideOfStreet'].tolist()
-    sides = sorted(sides)
+    if len(sides) > 0:
+        sides = sorted(sides)
+        side_selector = st.sidebar.selectbox(
+            "Select a street side",
+            sides
+        )
+        df = df_street.loc[df_street['SideOfStreet'] == side_selector]
+    else:
+        df = df_street
 
-    side_selector = st.sidebar.selectbox(
-        "Select a street side",
-        sides
-    )
+    lat = df['Latitude']
+    lon = df['Longitude']
+    count = df['ParkingSpaceCount']
 
-    lat = data[(data['BlockfaceName'] == location_selector) & (data['SideOfStreet'] == side_selector)]['Latitude']
-    lon = data[ (data['BlockfaceName'] == location_selector) & (data['SideOfStreet'] == side_selector)]['Longitude']
-    
-    lat = lat.values[0]
-    lon = lon.values[0]
-
-    return lat, lon
+    return lat, lon, count
 
 # Method to generate a data frame that contains 
 def generate_model_input_map(day, minute, coordinates):
@@ -92,7 +102,7 @@ paystubs = pd.read_csv('../parking/data/paystub_location.csv')
 
 day, minute = user_input_date()
 
-lat, lon = user_input_street(paystubs)
+lat, lon, count = user_input_street(paystubs)
 
 m = folium.Map(location=[47.6256, -122.3344], zoom_start=15)
 
@@ -106,7 +116,6 @@ if user_confirm():
         paid_occupancy_percentage.append([paid_occupancy_pred[i][0], paid_occupancy_pred[i][1], percentage]) 
 
     points = np.array(paid_occupancy_percentage)
-    print(paid_occupancy_percentage)
     plugins.HeatMap(points).add_to(m)
 
     num = predict_street(model_available, day, minute, lat, lon)

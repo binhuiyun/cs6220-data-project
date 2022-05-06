@@ -103,7 +103,7 @@ def predict_map(model, day, minute, df):
 
 
 # Main Panel
-model = joblib.load('data/random-forest.joblib')
+model = joblib.load('data/rf-model.joblib')
 paystubs = pd.read_csv('data/paystub_location.csv')
 
 st.set_page_config(layout='wide')

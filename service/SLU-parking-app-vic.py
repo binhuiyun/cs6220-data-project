@@ -11,7 +11,7 @@ def user_input_date():
         "Select a date",
         datetime.date(2022, 3, 22)
     )
-    hour = st.sidebar.slider('Hour', 8, 18, 8)
+    hour = st.sidebar.slider('Hour', 8, 20, 8)
     minute= st.sidebar.slider('Minute',0, 60, 0)
 
     day_of_the_week = date.weekday()
@@ -134,10 +134,10 @@ view_state = pdk.ViewState(
     zoom=13,
     min_zoom=5,
     max_zoom=20,
-    pitch=40.5
+    pitch=50
 )
 
-r = pdk.Deck(initial_view_state=view_state)
+r = pdk.Deck(initial_view_state=view_state, map_style='mapbox://styles/mapbox/streets-v11')
 
 if user_confirm():
 
@@ -153,14 +153,19 @@ if user_confirm():
         extruded=True
     )
 
-    r = pdk.Deck(layers=[layer], initial_view_state=view_state)
+    r = pdk.Deck(layers=[layer], initial_view_state=view_state, map_style='mapbox://styles/mapbox/streets-v11')
 
     num = predict_street(model, day, minute, lat, lon)
-    
+    data = [[day, minute, lat.iloc[0], lon.iloc[0]]]
+
+    inputs = pd.DataFrame(data, columns=['DayOfTheWeek','MinuteOfTheDay','Latitude','Longitude'])
+    st.write("Inputs for machine learning model")
+    st.write(inputs)
+
     if num[0] > count:
-        st.write(count, "parking space is available on your selected street.")
+        st.write(count, "parking spaces are available on your selected street.")
     elif count > num[0] > 0:
-        st.write(round(num[0]), "parking space is available on your selected street.")
+        st.write(round(num[0]), "parking spaces are available on your selected street.")
     else:
         st.write('Sorry, no available parking on your selected street.')
 

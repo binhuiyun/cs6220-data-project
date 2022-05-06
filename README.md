@@ -1,5 +1,5 @@
 # Seattle Paid Parking Prediction
-Group project for CS6220 - Data Mining Techniques at Northeastern University
+## Group project for CS6220 - Data Mining Techniques at Northeastern University
 <br>
 This project predicts the on-street meter parking availability based on parking transaction data in South Lake Union, Capitol Hill, First Hill, and Denny Triangle in the City of Seattle. Datasets are pre-processed. Parking availability time series are analyzed, and daily and weekly recurring patterns are identified. Based on feature selection and model comparison, Random Forest shows the best performance overall and is used in our service. 
 <br>

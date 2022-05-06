@@ -1,5 +1,6 @@
 from os import path
-
+from calendar import weekday
+import datetime
 import numpy as np
 import pandas as pd
 import pydeck as pdk
@@ -112,7 +113,11 @@ with row_1_0:
     )
 
 with row_1_1:
-    input_day = st.slider('Select day of the week', 1, 7, value=2)
+    
+    d = st.date_input(
+     "Select a date",
+    datetime.date(2022, 4, 28))
+    input_day =  weekday(d.year,d.month,d.day)
     input_hour = st.slider('Select hour', 8, 18, value=10)
     input_minute = st.slider('Select minute', 0, 59, value=30)
 

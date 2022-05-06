@@ -1,12 +1,9 @@
 import streamlit as st
-import joblib
-import datetime
 import pandas as pd
-from streamlit_folium import folium_static
-import folium
-from folium import plugins
-import math
-import numpy as np
+import datetime
+import pydeck as pdk
+from os import path
+import joblib
 
 # Method to display date side bar and gather user data time input
 def user_input_date():
@@ -22,14 +19,8 @@ def user_input_date():
 
     return (day_of_the_week, minute_of_the_day)
 
-# Method to display "See Result" and gather on click response
-def user_confirm():
-    res = st.sidebar.button("See Result")
-    return res
-
 # Method to display block and street side drop down menu and gather user street input
 def user_input_street(data):
-    
     areas = ['South Lake Union', 'Denny Triangle', 'First Hill', 'Capitol Hill']
 
     area_selector = st.sidebar.selectbox(
@@ -60,31 +51,16 @@ def user_input_street(data):
 
     lat = df['Latitude']
     lon = df['Longitude']
-    count = df['ParkingSpaceCount']
+    count = df['ParkingSpaceCount'].iloc[0]
 
     return lat, lon, count
 
-# Method to generate a data frame that contains 
-def generate_model_input_map(day, minute, coordinates):
-    num_coor = len(coordinates)
-    day_list, minute_list = [], []
-    day_list += num_coor * [day]
-    minute_list += num_coor * [minute]
-    coordinates['DayOfTheWeek'] = day_list
-    coordinates['MinuteOfTheDay'] = minute_list
-    coordinates = coordinates[['DayOfTheWeek','MinuteOfTheDay','Latitude', 'Longitude', 'ParkingSpaceCount']]
-    return coordinates
+# Method to display "See Result" and gather on click response
+def user_confirm():
+    res = st.sidebar.button("See Result")
+    return res
 
-def predict_map(model, day, minute, coordinates):
-    map_df = generate_model_input_map(day, minute, coordinates)
-    map_out = model.predict(map_df)
-
-    new_df = map_df[['Longitude','Latitude']]
-    new_df = pd.concat([new_df, pd.DataFrame(map_out, columns=['count'])], axis = 1)
-    points = new_df.to_numpy()
-    return points
-
-
+# Method to predict parking spaces for a given coordinates
 def predict_street(model, day, minute, Latitude, Longitude):
     col = ['DayOfTheWeek', 'MinuteOfTheDay', 'Latitude', 'Longitude']
     user_in = [day, minute, Latitude, Longitude]
@@ -93,36 +69,99 @@ def predict_street(model, day, minute, Latitude, Longitude):
     res = model.predict(user_df)
     return res
 
+# Method to generate a data frame that contains all data points
+# for model prediction 
+def generate_model_input(day, minute, df):
+    res = df[['Latitude', 'Longitude']]
+    df_length = len(df)
+
+    day_list, minute_list = [], []
+    day_list += df_length * [day]
+    minute_list += df_length * [minute]
+    res['DayOfTheWeek'] = day_list
+    res['MinuteOfTheDay'] = minute_list
+
+    res = res[['DayOfTheWeek','MinuteOfTheDay','Latitude', 'Longitude']]
+    return res
+
+# Method to predict parking spaces for all coordinates in df
+# return a dataframe that will be used in pydeck layer
+def predict_map(model, day, minute, df):
+    map_df = generate_model_input(day, minute, df)
+    map_out = model.predict(map_df)
+    map_out = [round(i) for i in map_out]
+    res = pd.DataFrame(columns=['lng', 'lat'])
+
+    map_out = [round(i) for i in map_out]
+    res = pd.DataFrame(columns=['lng', 'lat'])
+    for i in range(len(map_out)):
+        for j in range(map_out[i]):
+            to_append = [df['Longitude'][i], df['Latitude'][i]]
+            a_series = pd.Series(to_append, index = res.columns)
+            res = res.append(a_series, ignore_index=True)
+    return res
+
 
 # Main Panel
-model_available = joblib.load('../parking/random-forest-ParkingSpaceAvailable.joblib')
-model_occupancy = joblib.load('../parking/random-forest-PaidOccupancy.joblib')
-coordinates = pd.read_csv('../parking/data/paystub_coordinates.csv')
-paystubs = pd.read_csv('../parking/data/paystub_location.csv')
+model = joblib.load('../data/random-forest-test.joblib')
+paystubs = pd.read_csv('../data/paystub_location.csv')
+
+st.set_page_config(layout='wide')
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"][aria-expanded="true"] > div:first-child {
+        width: 465px;
+    }
+    [data-testid="stSidebar"][aria-expanded="false"] > div:first-child {
+        width: 465px;
+        margin-left: -465px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.title("Seattle Paid Parking Prediction")
 
 day, minute = user_input_date()
-
 lat, lon, count = user_input_street(paystubs)
 
-m = folium.Map(location=[47.6256, -122.3344], zoom_start=15)
+# Set the viewport location
+view_state = pdk.ViewState(
+    longitude=-122.3344,
+    latitude=47.615,
+    zoom=13,
+    min_zoom=5,
+    max_zoom=20,
+    pitch=40.5
+)
+
+r = pdk.Deck(initial_view_state=view_state)
 
 if user_confirm():
-    predict_map(model_occupancy, day, minute, coordinates)
-    paid_occupancy_pred = predict_map(model_occupancy, day, minute, coordinates)
 
-    paid_occupancy_percentage = []
-    for i in range(0, len(paid_occupancy_pred)):
-        percentage = paid_occupancy_pred[i][2] / coordinates['ParkingSpaceCount'][i]
-        paid_occupancy_percentage.append([paid_occupancy_pred[i][0], paid_occupancy_pred[i][1], percentage]) 
+    pts = predict_map(model, day, minute, paystubs)
+    layer = pdk.Layer(
+        'HexagonLayer',  # `type` positional argument is here
+        pts,
+        get_position=['lat','lng'],
+        radius=18,
+        elevation_scale=4, 
+        elevation_range=[0, 100], 
+        pickable=True, 
+        extruded=True
+    )
 
-    points = np.array(paid_occupancy_percentage)
-    plugins.HeatMap(points).add_to(m)
+    r = pdk.Deck(layers=[layer], initial_view_state=view_state)
 
-    num = predict_street(model_available, day, minute, lat, lon)
-    if num[0] > 0:
-        st.write(round(num[0]), "parking space is available on your selected street!")
+    num = predict_street(model, day, minute, lat, lon)
+    
+    if num[0] > count:
+        st.write(count, "parking space is available on your selected street.")
+    elif count > num[0] > 0:
+        st.write(round(num[0]), "parking space is available on your selected street.")
     else:
-        st.write('No available parking on your selected street!')
+        st.write('Sorry, no available parking on your selected street.')
 
-folium_static(m)
-
+st.pydeck_chart(pydeck_obj=r, use_container_width=False)

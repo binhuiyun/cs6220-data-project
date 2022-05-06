@@ -1,5 +1,5 @@
 .DS_Store
-
+.gitignore
 .vscode
 .idea
 .ipynb_checkpoints

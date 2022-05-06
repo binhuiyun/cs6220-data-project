@@ -30,7 +30,7 @@ st.markdown(
 )
 
 st.title("Seattle Parking prediction App")
-st.sidebar.title("Inpus")
+st.sidebar.title("Inputs")
 
 def user_input_features():
     data = pd.read_csv('../data/paystub_location.csv')
